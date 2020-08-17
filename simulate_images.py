@@ -6,7 +6,9 @@ Created on Sun Aug 16 16:56:37 2020
 @author: kartasalo
 """
 import numpy as np
+import os
 import pandas as pd
+from argparse import ArgumentParser
 from matplotlib import pyplot as plt
 
 # Function for getting number of localizations for a particle.
@@ -21,27 +23,54 @@ def localizations_per_particle(d_particle, localization_density):
     return localizations
 
 ###################### Set parameters ########################################
+try:
+    parser = ArgumentParser()
+    # Output file.
+    parser.add_argument("output", type=str, help="Path to output localization file")
+    # Width and height of the image frame in nanometers.
+    parser.add_argument("width", default=22272, type=int, help="Width of the image (nm)")
+    parser.add_argument("height", default=22272, type=int, help="Width of the image (nm)")
+    # Minimum and maximum number of particles per image.
+    parser.add_argument("particles_min", default=100, type=int, help="Minimum number of particles")
+    parser.add_argument("particles_max", default=100, type=int, help="Maximum number of particles")
+    # Particle diameter mean and std.
+    parser.add_argument("diameter_mean", default=100, type=float, help="Particle diameter (nm), mean")
+    parser.add_argument("diameter_std", default=0, type=float, help="Particle diameter (nm), std")
+    # Density of localizations within particles, mean and std.
+    # Specified as localizations per nm^3 of particle volume.
+    parser.add_argument("density_mean", default=6.1115498e-4, type=float, help="Density of localizations (per nm^3), mean")
+    parser.add_argument("density_std", default=0, type=float, help="Density of localizations (per nm^3), std")
+    # Amount of "shot noise" as the number of random localizations.
+    parser.add_argument("noise_min", default=1000, type=int, help="Minimum number of noise events")
+    parser.add_argument("noise_max", default=1000, type=int, help="Maximum number of noise events")
+    args = parser.parse_args()
+    
+    # Collect parameters.
+    output = args.output
+    frame_w = args.width
+    frame_h = args.height
+    n_particles_min = args.particles_min
+    n_particles_max = args.particles_max
+    d_particles_mean = args.diameter_mean
+    d_particles_std = args.diameter_std
+    localization_density_mean = args.density_mean
+    localization_density_std = args.density_std
+    noise_shots_min = args.noise_min
+    noise_shots_max = args.noise_max
 
-# Width and height of the image frame in nanometers.
-frame_w = 22272
-frame_h = 22272
-
-# Minimum and maximum number of particles per image.
-n_particles_min = 100
-n_particles_max = 100
-
-# Particle diameter mean and std.
-d_particles_mean = 100
-d_particles_std = 0
-
-# Density of localizations within particles, mean and std.
-# Specified as localizations per nm^3 of particle volume.
-localization_density_mean = 6.1115498e-4
-localization_density_std = 0
-
-# Amount of "shot noise" as the number of random localizations.
-noise_shots_min = 10000
-noise_shots_max = 10000
+# This is just for interactive prototyping.
+except:
+    output = "/home/kartasalo/storm-simulation.csv"
+    frame_w = 22272
+    frame_h = 22272
+    n_particles_min = 100
+    n_particles_max = 100
+    d_particles_mean = 100
+    d_particles_std = 0
+    localization_density_mean = 6.1115498e-4
+    localization_density_std = 0
+    noise_shots_min = 10000
+    noise_shots_max = 10000
 
 ###################### Sample parameters for this image ######################
 # Number of particles.
@@ -117,22 +146,30 @@ for shot in range(noise_shots):
     y = np.random.uniform(0,frame_h)
     list_localizations = np.vstack((list_localizations,[y,x,np.nan]))
 
-###################### Save localizations as CSV #############################
+###################### Store output ##########################################
+# Create output folder if it does not exist.
+if not os.path.exists(os.path.dirname(output)):
+    os.makedirs(os.path.dirname(output))
 
-###################### Save the true parameters as CSV #######################
+# Save localizations as CSV.
+df = pd.DataFrame(list_localizations,columns=['y','x','particle'])
+df.to_csv(output.replace(".csv","_localizations.csv"), index=False)
 
-###################### Plot generated data ###################################
-fig = plt.figure()
-ax = fig.add_subplot(111)
-plt.scatter(list_localizations[:,1],list_localizations[:,0],1)
-plt.xlim(0,frame_w)
-plt.ylim(0,frame_h)
-ax.set_aspect('equal', adjustable='box')
-plt.xlabel('X (nm)')
-plt.ylabel('Y (nm)')
+# Save the true particle parameters as CSV.
+df = pd.DataFrame(list_particles,columns=['y','x','diameter','density'])
+df.to_csv(output.replace(".csv","_particles.csv"), index=False)
 
-
-
+# Plot generated data.
+# fig = plt.figure()
+# ax = fig.add_subplot(111)
+# plt.plot(list_localizations[:,1],list_localizations[:,0],".",color='black',markersize=1)
+# plt.xlim(0,frame_w)
+# plt.ylim(0,frame_h)
+# ax.set_aspect('equal', adjustable='box')
+# plt.xlabel('X (nm)')
+# plt.ylabel('Y (nm)')
+# plt.savefig(output.replace(".csv",".png"),dpi=2000)
+# plt.close()
 
 
 
