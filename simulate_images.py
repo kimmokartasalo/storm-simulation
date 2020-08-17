@@ -43,6 +43,8 @@ try:
     # Amount of "shot noise" as the number of random localizations.
     parser.add_argument("noise_min", default=1000, type=int, help="Minimum number of noise events")
     parser.add_argument("noise_max", default=1000, type=int, help="Maximum number of noise events")
+    # Visualize or not.
+    parser.add_argument("--visualize", store_action=True, help="Visualize generated data")
     args = parser.parse_args()
     
     # Collect parameters.
@@ -57,6 +59,7 @@ try:
     localization_density_std = args.density_std
     noise_shots_min = args.noise_min
     noise_shots_max = args.noise_max
+    visualize = args.visualize
 
 # This is just for interactive prototyping.
 except:
@@ -71,6 +74,7 @@ except:
     localization_density_std = 0
     noise_shots_min = 10000
     noise_shots_max = 10000
+    visualize = True
 
 ###################### Sample parameters for this image ######################
 # Number of particles.
@@ -160,16 +164,15 @@ df = pd.DataFrame(list_particles,columns=['y','x','diameter','density'])
 df.to_csv(output.replace(".csv","_particles.csv"), index=False)
 
 # Plot generated data.
-# fig = plt.figure()
-# ax = fig.add_subplot(111)
-# plt.plot(list_localizations[:,1],list_localizations[:,0],".",color='black',markersize=1)
-# plt.xlim(0,frame_w)
-# plt.ylim(0,frame_h)
-# ax.set_aspect('equal', adjustable='box')
-# plt.xlabel('X (nm)')
-# plt.ylabel('Y (nm)')
-# plt.savefig(output.replace(".csv",".png"),dpi=2000)
-# plt.close()
+if visualize:
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    plt.scatter(list_localizations[:,1],list_localizations[:,0],s=1,marker=".")
+    plt.xlim(0,frame_w)
+    plt.ylim(0,frame_h)
+    ax.set_aspect('equal', adjustable='box')
+    plt.xlabel('X (nm)')
+    plt.ylabel('Y (nm)')
 
 
 
