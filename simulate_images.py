@@ -88,8 +88,8 @@ else:
     noise_shots = noise_shots_min
 
 ###################### Generate particles ####################################
-# Initialize array of particles (x,y,diameter,density), one particle per row.
-list_particles = np.empty((0,4),dtype=np.float64)
+# Initialize array of particles (id,x,y,diameter,density), one particle per row.
+list_particles = np.empty((0,5),dtype=np.float64)
 
 # Go through particles, one by one.
 for particle in range(n_particles):
@@ -107,24 +107,26 @@ for particle in range(n_particles):
         y_center = np.random.uniform(0,frame_h)
         
         # Calculate Euclidean distance to all existing particle centers.
-        dists = np.sqrt(np.sum((list_particles[:,0:2] - [y_center,x_center])**2,axis=1))
+        dists = np.sqrt(np.sum((list_particles[:,1:3] - [y_center,x_center])**2,axis=1))
 
         # If all existing particles are further away than the diameter, accept.
         if all(dists > d):
-            list_particles = np.vstack((list_particles,[y_center,x_center,d,dens]))
+            list_particles = np.vstack((list_particles,[particle+1,y_center,x_center,d,dens]))
             break
 
 ###################### Generate localizations #################################
-list_localizations = np.empty((0,3),dtype=np.float64)
+list_localizations = np.empty((0,4),dtype=np.float64)
 
+loc_id = 1
 # Go through particles, one by one.
 for particle in range(n_particles):
-    # Pick the previously sampled data for this particle (x,y,diameter,density).
-    x_center = list_particles[particle,1]
-    y_center = list_particles[particle,0]
-    d = list_particles[particle,2]
+    # Pick the previously sampled data for this particle (id,x,y,diameter,density).
+    particle_id = list_particles[particle,0]
+    x_center = list_particles[particle,2]
+    y_center = list_particles[particle,1]
+    d = list_particles[particle,3]
     r = d/2
-    dens = list_particles[particle,3]
+    dens = list_particles[particle,4]
     
     # Calculate number of localizations this particle should contain.
     n_localizations = localizations_per_particle(d, dens)
@@ -139,14 +141,16 @@ for particle in range(n_particles):
             # If the Euclidean distance to the center of the particle is less 
             # than the particle radius, accept the point.
             if np.sqrt((y - y_center)**2 + (x - x_center)**2) <= r:
-                list_localizations = np.vstack((list_localizations,[y,x,particle]))
+                list_localizations = np.vstack((list_localizations,[loc_id,y,x,particle_id]))
+                loc_id += 1
                 break
 
 ###################### Generate noise #################################
 for shot in range(noise_shots):
     x = np.random.uniform(0,frame_w)
     y = np.random.uniform(0,frame_h)
-    list_localizations = np.vstack((list_localizations,[y,x,np.nan]))
+    list_localizations = np.vstack((list_localizations,[loc_id,y,x,0]))
+    loc_id += 1
 
 ###################### Store output ##########################################
 # Create output folder if it does not exist.
@@ -154,18 +158,18 @@ if not os.path.exists(os.path.dirname(output)):
     os.makedirs(os.path.dirname(output))
 
 # Save localizations as CSV.
-df = pd.DataFrame(list_localizations,columns=['y','x','particle'])
+df = pd.DataFrame(list_localizations,columns=['id','y [nm]','x [nm]','particle id'])
 df.to_csv(output.replace(".csv","_localizations.csv"), index=False)
 
 # Save the true particle parameters as CSV.
-df = pd.DataFrame(list_particles,columns=['y','x','diameter','density'])
+df = pd.DataFrame(list_particles,columns=['particle id','y [nm]','x [nm]','diameter [nm]','density [per nm^3]'])
 df.to_csv(output.replace(".csv","_particles.csv"), index=False)
 
 # Plot generated data.
 if visualize:
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    plt.scatter(list_localizations[:,1],list_localizations[:,0],s=1,marker=".")
+    plt.scatter(list_localizations[:,2],list_localizations[:,1],s=1,marker=".")
     plt.xlim(0,frame_w)
     plt.ylim(0,frame_h)
     ax.set_aspect('equal', adjustable='box')
