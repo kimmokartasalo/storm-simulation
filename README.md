@@ -39,7 +39,9 @@ The code generates two CSV files as output.
 `<output>_localizations.csv` - Table of all the generated localizations.
   
 ## Running parameter sweeps
-The simulator can be easily run to generate a large number of images with different parameters. A script for running such parameter sweeps is work in progress.
+The simulator can be easily run to generate a large number of images with different parameters. The script `run_sweep.py`is meant as an example for this purpose. You can modify the parameter combinations to use and the number of images to generate for each combination by editing the script. The script can then be run interactively in e.g. Spyder or from the command line with `python3 run_sweep.py`.
+ 
+The script will create one subdirectory in the requested output folder per parameter combination. The images representing those parameters are stored in the subdirectory and named with a running number.
 
 ## Citing
 If you use the code for an article, please contact the author.
